@@ -6,6 +6,12 @@ Windows only. One `pet.exe` (about 280 KB) and a `skins` folder. No Node.js, no 
 
 ![the two skins](docs/skins.png)
 
+| It calls you back | Hover for the panel | Sol, one of the animations |
+|---|---|---|
+| <img src="docs/demo-bubble.png" width="260"> | <img src="docs/demo-panel.png" width="330"> | <img src="docs/sol-clap.gif" width="150"> |
+
+(The two sessions in the pictures are stand-ins made up for the screenshot.)
+
 ## What it does
 
 - **Calls you back.** While nothing needs you it is quiet. When a session waits for an approval or an answer it waves, and a speech bubble says which project and why. Click the bubble to jump to that terminal window. It never takes the keyboard focus, makes no sound unless you switch it on, and hides while a full-screen app is in front.
