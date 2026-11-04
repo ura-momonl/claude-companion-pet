@@ -34,6 +34,16 @@ The default skin is a small lantern robot; **Sol** (a pixel girl with short anim
 
 Everything is read from files on your own machine: the hook events, Claude Code's conversation files (only token counts and the last message's first line for naming), Codex's session files and quota report. Nothing leaves the machine unless you tick **More → Read Claude limits from the account**: then the Claude Code login token is used for one read-only request every 5 minutes to the Anthropic usage endpoint (the token is not stored or logged). That option is off by default. The only other network access is the update check you start yourself (api.github.com, no personal data sent).
 
+## Not code-signed: how to check what you run
+
+`pet.exe` is not code-signed. A certificate costs money this free project does not earn back, and Windows SmartScreen builds trust per file over time anyway, so you will see "unrecognized app" the first time (*More info → Run anyway*). Signing for open-source projects is something we may apply for later. Until then, you can check it yourself:
+
+- **Read it.** The whole program is the C# in `cs/` (about two dozen files, no dependencies, no network code except the update check and the opt-in Claude limits read described under Privacy).
+- **Build it.** `build.cmd` needs only the C# compiler that ships with Windows. Run it and use your own `pet.exe`.
+- **Compare the download.** The SHA-256 of `claude-companion-pet-v2.20.zip` is `94d2575f99af210ed3b9be6a60216f5583fbf8d752a27b1b0dc5a58ffcfb6662` (GitHub also lists it on the release); in PowerShell: `Get-FileHash .\claude-companion-pet-v2.20.zip`. The in-app update check verifies this hash before replacing anything.
+
+An unsigned program that starts by itself and reads files can also make some antivirus products suspicious. If yours complains, the two sections above are the answer; false-positive reports are welcome as issues.
+
 ## Build
 
 ```
@@ -53,6 +63,10 @@ powershell -File tools\package.ps1   # pet.exe + skins + prices.json -> dist\*.z
 ## Skins
 
 See [skins/README.md](skins/README.md). The robot is drawn in code; the Sol pictures were generated with the owner's own PixelLab account and edited by hand.
+
+## Credits
+
+Written by Claude and Codex (AI coding assistants) together with ura-momonl, who set the direction, tested it on a real desktop and decided what stays and what goes. Codex did a good part of the work too, including checking the Codex hooks and app-server interfaces that the Codex side relies on. (GitHub's Contributors list only shows GitHub accounts, so it lists Claude alone; this section is the fuller record.)
 
 ## License
 
