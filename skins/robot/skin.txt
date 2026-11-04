@@ -1,0 +1,5 @@
+name=Lantern robot
+name.zh=提灯小机器人
+scale=5
+frame_ms=500
+mode=loop

@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "checked": "2026-11-03",
+  "currency": "USD",
+  "unit": "per_million_tokens",
+  "note": "API-equivalent list prices (not a subscription bill). A null price means the page gave no figure for that component; tokens in that component are reported as unpriced instead of guessed.",
+  "sources": [
+    { "id": "anthropic", "url": "https://platform.claude.com/docs/en/about-claude/pricing", "checked": "2026-11-03", "how": "page text read through a fetch agent; model table, cache multipliers, fast mode, US-only 1.1x and Haiku 5.5 prompt-length tiers copied from the page text. The page showed no last-updated date." },
+    { "id": "openai", "url": "https://developers.openai.com/api/docs/pricing", "checked": "2026-11-03", "how": "page text read through a fetch agent; Standard table, short context <=272K input tokens / long context >272K input tokens. The page showed no date and does not say what the 30m/12h write columns mean, nor whether cached tokens count toward 272K. Cache writes are therefore left unpriced (null)." }
+  ],
+  "models": [
+    { "match": ["claude-sonnet-5-5"], "provider": "anthropic", "label": "Claude Sonnet 5.5", "us_multiplier": 1.1,
+      "tiers": [ { "input": 2, "cache_read": 0.10, "cache_write_5m": 2.50, "cache_write_1h": 4, "output": 10 } ] },
+    { "match": ["claude-sonnet-5"], "provider": "anthropic", "label": "Claude Sonnet 5", "us_multiplier": 1.1,
+      "tiers": [ { "input": 2, "cache_read": 0.20, "cache_write_5m": 2.50, "cache_write_1h": 4, "output": 10 } ] },
+    { "match": ["claude-sonnet-4-6"], "provider": "anthropic", "label": "Claude Sonnet 4.6", "us_multiplier": 1.1,
+      "tiers": [ { "input": 3, "cache_read": 0.30, "cache_write_5m": 3.75, "cache_write_1h": 6, "output": 15 } ] },
+    { "match": ["claude-sonnet-4-5", "claude-sonnet-4"], "provider": "anthropic", "label": "Claude Sonnet 4.5 / 4",
+      "tiers": [ { "input": 3, "cache_read": 0.30, "cache_write_5m": 3.75, "cache_write_1h": 6, "output": 15 } ] },
+    { "match": ["claude-haiku-5-5"], "provider": "anthropic", "label": "Claude Haiku 5.5", "us_multiplier": 1.1,
+      "tiers": [
+        { "max_prompt_tokens": 100000, "input": 0.10, "cache_read": 0.01, "cache_write_5m": 0.125, "cache_write_1h": 0.20, "output": 0.50 },
+        { "input": 0.50, "cache_read": 0.05, "cache_write_5m": 0.625, "cache_write_1h": 1, "output": 2.50 } ] },
+    { "match": ["claude-haiku-4-5"], "provider": "anthropic", "label": "Claude Haiku 4.5",
+      "tiers": [ { "input": 1, "cache_read": 0.10, "cache_write_5m": 1.25, "cache_write_1h": 2, "output": 5 } ] },
+    { "match": ["claude-3-5-haiku"], "provider": "anthropic", "label": "Claude Haiku 3.5",
+      "tiers": [ { "input": 0.80, "cache_read": 0.08, "cache_write_5m": 1, "cache_write_1h": 1.60, "output": 4 } ] },
+    { "match": ["claude-opus-5-5"], "provider": "anthropic", "label": "Claude Opus 5.5", "us_multiplier": 1.1,
+      "tiers": [ { "input": 4, "cache_read": 0.20, "cache_write_5m": 5, "cache_write_1h": 8, "output": 20 } ],
+      "fast_tiers": [ { "input": 8, "cache_read": null, "cache_write_5m": null, "cache_write_1h": null, "output": 40 } ] },
+    { "match": ["claude-opus-5", "claude-opus-4-8"], "provider": "anthropic", "label": "Claude Opus 5 / 4.8", "us_multiplier": 1.1,
+      "tiers": [ { "input": 5, "cache_read": 0.50, "cache_write_5m": 6.25, "cache_write_1h": 10, "output": 25 } ],
+      "fast_tiers": [ { "input": 10, "cache_read": null, "cache_write_5m": null, "cache_write_1h": null, "output": 50 } ] },
+    { "match": ["claude-opus-4-7", "claude-opus-4-6"], "provider": "anthropic", "label": "Claude Opus 4.7 / 4.6", "us_multiplier": 1.1,
+      "tiers": [ { "input": 5, "cache_read": 0.50, "cache_write_5m": 6.25, "cache_write_1h": 10, "output": 25 } ] },
+    { "match": ["claude-opus-4-5"], "provider": "anthropic", "label": "Claude Opus 4.5",
+      "tiers": [ { "input": 5, "cache_read": 0.50, "cache_write_5m": 6.25, "cache_write_1h": 10, "output": 25 } ] },
+    { "match": ["claude-opus-4-1", "claude-opus-4"], "provider": "anthropic", "label": "Claude Opus 4.1 / 4",
+      "tiers": [ { "input": 15, "cache_read": 1.50, "cache_write_5m": 18.75, "cache_write_1h": 30, "output": 75 } ] },
+
+    { "match": ["gpt-6.1-sol"], "provider": "openai", "label": "GPT-6.1 Sol",
+      "tiers": [
+        { "max_prompt_tokens": 272000, "input": 2.00, "cache_read": 0.10, "cache_write_5m": null, "cache_write_1h": null, "output": 10.00 },
+        { "input": 4.00, "cache_read": 0.20, "cache_write_5m": null, "cache_write_1h": null, "output": 15.00 } ],
+      "reference": "page cache-write columns: short 30m $2.50 / 12h $5.00, long 30m $5.00 / 12h $10.00 (meaning not defined on the page)" },
+    { "match": ["gpt-6-sol"], "provider": "openai", "label": "GPT-6 Sol",
+      "tiers": [
+        { "max_prompt_tokens": 272000, "input": 2.00, "cache_read": 0.20, "cache_write_5m": null, "cache_write_1h": null, "output": 10.00 },
+        { "input": 4.00, "cache_read": 0.40, "cache_write_5m": null, "cache_write_1h": null, "output": 15.00 } ] },
+    { "match": ["gpt-6-luna"], "provider": "openai", "label": "GPT-6 Luna",
+      "tiers": [
+        { "max_prompt_tokens": 272000, "input": 0.10, "cache_read": 0.01, "cache_write_5m": null, "cache_write_1h": null, "output": 0.50 },
+        { "input": 0.20, "cache_read": 0.02, "cache_write_5m": null, "cache_write_1h": null, "output": 0.75 } ] },
+    { "match": ["gpt-6-astra"], "provider": "openai", "label": "GPT-6 Astra",
+      "tiers": [
+        { "max_prompt_tokens": 272000, "input": 10.00, "cache_read": 1.00, "cache_write_5m": null, "cache_write_1h": null, "output": 50.00 },
+        { "input": 20.00, "cache_read": 2.00, "cache_write_5m": null, "cache_write_1h": null, "output": 75.00 } ] }
+  ],
+  "unpriced_known": [
+    { "model": "codex-auto-review", "why": "not listed on the OpenAI pricing page" }
+  ]
+}

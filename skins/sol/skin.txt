@@ -1,0 +1,48 @@
+name=Sol
+name.zh=Sol（小人）
+scale=1
+frame_ms=120
+mode=pingpong
+# Feet target (x,y in the 128px picture): every animation is shifted as a whole at load time so its median feet centre and lowest row land here; the files are never changed.
+align=63,126
+# Several animations in one state folder (idle/, busy/): one plays through, the pet rests a random gap, then another one plays.
+idle.gap_ms=15000-40000
+busy.gap_ms=5000-12000
+
+# --- behaviours (since 2026-11-03) ---
+# Getting your attention ("approval" = clap, "answer" = stretch with raised arms; the old wave lifted a foot): at once, rest a few seconds, wave again, for as long as it is waiting.
+approval.mode=once
+approval.gap_ms=8000-14000
+approval.start=play
+answer.mode=once
+answer.gap_ms=8000-14000
+answer.start=play
+# Picked up (hold and drag): lift = the start, held = hanging while held (loops), drop = put down. Own height (no feet alignment).
+lift.mode=once
+lift.align=off
+held.mode=pingpong
+held.align=off
+drop.mode=once
+drop.frame_ms=90
+drop.align=off
+# A click plays one of these once: wave, heart, clap (from the existing animations) and hop (own folder).
+happy.from=done,idle/pending-20_clap,idle/ok-11_ornament
+happy.mode=once
+happy.frame_ms=85
+# Sleeping: drowsy -> asleep (loops, slow breathing) -> wake. All taken from the sleepy animation (quota/ = 12_sleepy).
+sleepy.from=quota:0-2
+sleepy.mode=once
+sleepy.frame_ms=450
+asleep.from=quota:3-10
+asleep.mode=pingpong
+asleep.frame_ms=420
+wake.from=quota:11-18
+wake.mode=once
+wake.frame_ms=120
+
+# --- rest loop (since 2026-11-04) ---
+# Between two idle animations the pet breathes (8 pictures in rest/, generated with PixelLab, first and last picture = the idle still)
+# instead of standing on one picture. About one pixel of up and down, hair tips and jacket hem sway a little; a full breath takes 8 x 220 ms.
+idle.rest=rest
+rest.mode=loop
+rest.frame_ms=220
