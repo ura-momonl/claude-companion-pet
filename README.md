@@ -66,7 +66,12 @@ See [skins/README.md](skins/README.md). The robot is drawn in code; the Sol pict
 
 ## Credits
 
-Written by Claude and Codex (AI coding assistants) together with ura-momonl, who set the direction, tested it on a real desktop and decided what stays and what goes. Codex did a good part of the work too, including checking the Codex hooks and app-server interfaces that the Codex side relies on. (GitHub's Contributors list only shows GitHub accounts, so it lists Claude alone; this section is the fuller record.)
+Written by Claude and Codex (AI coding assistants) together with ura-momonl, who set the direction, tested it on a real desktop and decided what stays and what goes.
+
+- **Codex** wrote the parts that read Codex itself: the session source and the quota windows (`cs/CodexSource.cs`, `cs/Quota.cs`), the stable session identity and snapshots the panel is built on, and fixed the real-mouse bugs found on a real desktop (stuck mouse capture, hover polling, first show of the menu). She also checked the Codex hooks and app-server interfaces this relies on.
+- **Claude** wrote the character, skins and animations, the setup and Connect flow, the Claude Code side (hooks, usage, context), and put the pieces together.
+
+(GitHub's Contributors list only shows GitHub accounts, so it lists Claude alone; this section is the fuller record.)
 
 ## License
 
