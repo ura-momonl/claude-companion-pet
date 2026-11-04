@@ -4,4 +4,4 @@ A skin is a folder: `skins/<id>/<state>/*.png` (states: `idle busy approval answ
 
 The header comment of `cs/Skin.cs` lists every `skin.txt` key (frame time, loop / ping-pong / once, gaps between animations, feet alignment, `<state>.from=` to reuse pictures of another folder, `<state>.rest=<folder>` for a looping rest animation between two animations).
 
-Shipped: `robot` (default, a small lantern robot, 30x19 px pictures) and `sol` (a 128x128 pixel girl with short animations and a breathing rest loop; made with PixelLab and edited by hand).
+Shipped: `robot` (default, a small lantern robot, 30x19 px pictures) and `sol` (a 128x128 pixel girl with short animations and a breathing rest loop; generated with the project owner's own PixelLab account and edited by hand).
