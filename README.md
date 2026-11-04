@@ -26,12 +26,13 @@ Windows only. One `pet.exe` (about 280 KB) and a `skins` folder. No Node.js, no 
 1. Download `claude-companion-pet-*.zip` from the Releases page, unzip it somewhere permanent and run `pet.exe`. (Windows may warn about an unsigned program: *More info → Run anyway*.)
 2. Right-click the character → **Connect Claude Code…** and follow the three short steps. This adds hooks and a status line command to `~/.claude/settings.json` (a backup is kept; **Disconnect** removes them again). Sessions that are already open pick it up after their next event or a restart.
 3. Codex sessions and the Codex quota are read without any setup.
+4. Updating: right-click → **More → Check for updates…**. It asks GitHub for the latest release, shows what is new, and on a yes downloads the zip, checks its SHA-256 against the one GitHub lists, closes the pet, copies the new `pet.exe` / `skins` / `prices.json` over the program folder (your settings and statistics are kept) and starts it again. It only runs when you click it.
 
 The default skin is a small lantern robot; **Sol** (a pixel girl with short animations) is in the skin menu.
 
 ## Privacy
 
-Everything is read from files on your own machine: the hook events, Claude Code's conversation files (only token counts and the last message's first line for naming), Codex's session files and quota report. Nothing leaves the machine unless you tick **More → Read Claude limits from the account**: then the Claude Code login token is used for one read-only request every 5 minutes to the Anthropic usage endpoint (the token is not stored or logged). That option is off by default.
+Everything is read from files on your own machine: the hook events, Claude Code's conversation files (only token counts and the last message's first line for naming), Codex's session files and quota report. Nothing leaves the machine unless you tick **More → Read Claude limits from the account**: then the Claude Code login token is used for one read-only request every 5 minutes to the Anthropic usage endpoint (the token is not stored or logged). That option is off by default. The only other network access is the update check you start yourself (api.github.com, no personal data sent).
 
 ## Build
 

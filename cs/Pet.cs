@@ -888,6 +888,8 @@ namespace ClaudeCompanionPet
                 string d = Path.Combine(Env.DataDir(), "stats");
                 try { Directory.CreateDirectory(d); System.Diagnostics.Process.Start("explorer.exe", "\"" + d + "\""); } catch { }
             };
+            ToolStripItem upd = more.DropDownItems.Add(Lang.T("检查更新…（当前 ", "Check for updates… (this is ") + Updater.Current() + ")");
+            upd.Click += delegate { CheckForUpdate(); };
             ToolStripMenuItem hm = new ToolStripMenuItem(Lang.T("无更新就隐藏会话", "Hide sessions with no update"));
             foreach (int mins in new int[] { 0, 3, 5, 10, 30 })
             {
@@ -986,6 +988,36 @@ namespace ClaudeCompanionPet
             catch (Exception e) { Log("autostart failed: " + e.Message); }
         }
 
+        bool updating;
+        // manual only: ask GitHub, tell the user, and on a yes download + hand over to the updater script
+        void CheckForUpdate()
+        {
+            if (updating) return; updating = true;
+            Flash(Lang.T("正在检查更新…", "Checking for updates…"), 15000);
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                string err; Updater.Info info = Updater.Latest(out err);
+                BeginInvoke((MethodInvoker)delegate
+                {
+                    if (info == null) { updating = false; Log("update check failed: " + err); Flash(Lang.T("没能检查更新\n看不到 GitHub（网络？）", "Could not check for updates\nGitHub is not reachable"), 7000); return; }
+                    if (!Updater.Newer(info.Tag, Updater.Current())) { updating = false; Log("update check: up to date (" + Updater.Current() + ", latest " + info.Tag + ")"); Flash(Lang.T("已经是最新版\n" + Updater.Current(), "You are up to date\n" + Updater.Current()), 6000); return; }
+                    string first = (info.Notes ?? "").Replace("\r", "").Split('\n')[0];
+                    DialogResult dr = MessageBox.Show(Lang.T("有新版本 ", "A new version is available: ") + info.Tag + Lang.T("（当前 ", " (you have ") + Updater.Current() + ")\r\n" + (first.Length > 0 ? first + "\r\n" : "") + "\r\n" + Lang.T("现在更新吗？程序会自己关闭并重新打开，设置和统计保留。", "Update now? The program closes and starts again by itself; settings and statistics are kept."), "claude-companion-pet", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    if (dr != DialogResult.Yes) { updating = false; return; }
+                    Flash(Lang.T("正在下载…", "Downloading…"), 60000);
+                    System.Threading.ThreadPool.QueueUserWorkItem(delegate
+                    {
+                        string fail = Updater.Install(info);
+                        BeginInvoke((MethodInvoker)delegate
+                        {
+                            updating = false;
+                            if (fail == null) { Log("update to " + info.Tag + " started; quitting"); Quit(); }
+                            else { Log("update failed: " + fail); Flash(Lang.T("更新没成功\n", "Update did not work\n") + (fail.Length > 60 ? fail.Substring(0, 60) : fail), 9000); }
+                        });
+                    });
+                });
+            });
+        }
         void Quit() { try { panel.Close(); } catch { } tray.Visible = false; tray.Dispose(); timer.Stop(); Application.Exit(); }
 
         // ---------- mouse: drag the pet, right-click for the menu ----------
