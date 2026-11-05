@@ -2,7 +2,7 @@
 
 A small desktop character that sits on your screen while Claude Code (and Codex) work, and **calls you back when a session needs you**: an approval, a question, an error. Hover over it for a panel with your remaining quota, how full each conversation's context is, and what you have used.
 
-Windows only. One `pet.exe` (about 280 KB) and a `skins` folder. No Node.js, no installer, no admin rights.
+Windows only. One `pet.exe` (about 310 KB) and a `skins` folder. No Node.js, no installer, no admin rights.
 
 ![the two skins](docs/skins.png)
 
@@ -25,7 +25,7 @@ Windows only. One `pet.exe` (about 280 KB) and a `skins` folder. No Node.js, no 
 
 1. Download `claude-companion-pet-*.zip` from the Releases page, unzip it somewhere permanent and run `pet.exe`. (Windows may warn about an unsigned program: *More info → Run anyway*.)
 2. Right-click the character → **Connect Claude Code…** and follow the three short steps. This adds hooks and a status line command to `~/.claude/settings.json` (a backup is kept; **Disconnect** removes them again). Sessions that are already open pick it up after their next event or a restart.
-3. Codex sessions and the Codex quota are read without any setup.
+3. Codex sessions and the Codex quota are read without any setup. DeepSeek (the DSH harness): its sessions show up from `~/.dsh`; whether one is busy or waiting for you needs the `dsh-pet-bridge` plugin on the DSH side; the DeepSeek API balance is **off by default**: right-click → More → *Read DeepSeek balance* turns it on, and only then is a DeepSeek API key read, and only from the `DEEPSEEK_API_KEY` environment variable or a `deepseek.key` file in the pet's state folder (`%TEMP%\claude-companion`; the pet shows the exact path when it finds no key), to ask the official balance endpoint. No other credential store is searched.
 4. Updating: right-click → **More → Check for updates…**. It asks GitHub for the latest release, shows what is new, and on a yes downloads the zip, checks its SHA-256 against the one GitHub lists, closes the pet, copies the new `pet.exe` / `skins` / `prices.json` over the program folder (your settings and statistics are kept) and starts it again. It only runs when you click it.
 
 The default skin is a small lantern robot; **Sol** (a pixel girl with short animations) is in the skin menu.
@@ -59,6 +59,10 @@ powershell -File tools\package.ps1   # pet.exe + skins + prices.json -> dist\*.z
 - Context window size: taken from Claude Code's status line when it reports one, otherwise assumed from the model name (marked in the panel).
 - The quota and usage figures come from other tools' local files and may lag or disagree with the vendors' dashboards; the panel says when a number is stale.
 - No test suite is published yet.
+
+## Make your own skin
+
+Any GIF will do: name it `idle.gif`, `busy.gif`, `done.gif` … after the state it is for, drag the files onto `Make-skin.cmd`, type a name, then right-click the pet → Skin. No drawing tool, no code. The `skin-template` folder is a working example to copy, and [skins/README.md](skins/README.md) has the three-minute guide. Skins are plain folders of PNGs, so sharing one is zipping a folder.
 
 ## Skins
 

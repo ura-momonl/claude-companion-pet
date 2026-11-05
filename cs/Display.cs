@@ -21,9 +21,26 @@ namespace ClaudeCompanionPet
             started = true;
             try { UsageBackend.Start(); } catch (Exception e) { Diag.Error("usage start", e); }
             try { QuotaBackend.Start(); } catch (Exception e) { Diag.Error("quota start", e); }
-            try { Backend.ConfigureSources(CodexSource.ReadSessions, UsageBackend.ReadSnapshot, QuotaBackend.ReadSnapshot); Backend.Start(); }
+            try { DeepSeekBalance.Start(); } catch (Exception e) { Diag.Error("deepseek balance start", e); }
+            try { Backend.ConfigureSources(OtherSessions, UsageBackend.ReadSnapshot, QuotaBackend.ReadSnapshot); Backend.Start(); }
             catch (Exception e) { Diag.Error("session backend start", e); }
-            Diag.Write("backend started (sessions + usage + quota)");
+            Diag.Write("backend started (sessions + usage + quota + deepseek balance)");
+        }
+        // Codex and DeepSeek each own their reader; a failure in one must not hide the other's sessions.
+        // For dsh sessions, DeepSeekSource gives the session-file facts and DshSource adds the bridge's activity when the
+        // bridge plugin is installed; without it the sessions stay visible with an honest "unknown" state.
+        static List<Dictionary<string, object>> OtherSessions()
+        {
+            List<Dictionary<string, object>> all = new List<Dictionary<string, object>>();
+            try { all.AddRange(CodexSource.ReadSessions()); } catch (Exception e) { Diag.Error("codex sessions", e); }
+            List<Dictionary<string, object>> dsh = null;
+            try { dsh = DeepSeekSource.ReadSessions(); } catch (Exception e) { Diag.Error("deepseek sessions", e); }
+            if (dsh != null)
+            {
+                try { dsh = DshSource.Apply(dsh); } catch (Exception e) { Diag.Error("deepseek bridge", e); }   // a bridge failure keeps the session-file rows
+                all.AddRange(dsh);
+            }
+            return all;
         }
         // snapshot consumer first, then the modules it reads from
         public static void Stop()
@@ -33,6 +50,7 @@ namespace ClaudeCompanionPet
             try { Backend.Stop(); } catch (Exception e) { Diag.Error("session backend stop", e); }
             try { if (!UsageBackend.Stop(3000)) Diag.Write("usage worker did not stop within 3 s"); } catch (Exception e) { Diag.Error("usage stop", e); }
             try { QuotaBackend.Stop(); } catch (Exception e) { Diag.Error("quota stop", e); }
+            try { DeepSeekBalance.Stop(); } catch (Exception e) { Diag.Error("deepseek balance stop", e); }
             Diag.Write("backend stopped");
         }
     }
@@ -108,7 +126,7 @@ namespace ClaudeCompanionPet
         }
         public static string Usd(double v) { return v >= 100 ? "$" + Math.Round(v).ToString("0", CultureInfo.InvariantCulture) : v >= 1 ? "$" + v.ToString("0.00", CultureInfo.InvariantCulture) : "$" + v.ToString("0.000", CultureInfo.InvariantCulture); }
         public static string ProviderLabel(string p) { return ProviderName(p); }
-        static string ProviderName(string p) { return p == "codex" ? "Codex" : p == "claude" ? "Claude" : p; }
+        static string ProviderName(string p) { return p == "codex" ? "Codex" : p == "claude" ? "Claude" : p == "deepseek" ? "DeepSeek" : p; }
         static string ShortHour(long ms) { return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ms).ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture); }
 
         public static string WindowNote(string reason, string provider)
@@ -116,7 +134,7 @@ namespace ClaudeCompanionPet
             switch (reason)
             {
                 case "no_usable_window": return Lang.T("后台会话（没有终端窗口）", "Background session (no terminal window)");
-                case "no_verified_process_mapping": return provider == "codex" ? Lang.T("Codex 会话：还不能对应到某个窗口", "Codex session: cannot be matched to a window yet") : Lang.T("没有可核实的进程，不能跳转", "No verified process, cannot jump");
+                case "no_verified_process_mapping": return provider == "codex" ? Lang.T("Codex 会话：还不能对应到某个窗口", "Codex session: cannot be matched to a window yet") : provider == "deepseek" ? Lang.T("DSH 会话：还不能对应到某个窗口", "DSH session: cannot be matched to a window yet") : Lang.T("没有可核实的进程，不能跳转", "No verified process, cannot jump");
                 case "ambiguous_window": return Lang.T("有多个可能的窗口，不乱跳", "Several windows could match, not guessing");
                 case "window_probe_unavailable": return Lang.T("现在探测不了窗口", "Cannot probe windows right now");
                 case "process_not_verified_alive": return Lang.T("会话是否还在运行未确认，不能跳转", "Not confirmed running, cannot jump");
@@ -133,7 +151,8 @@ namespace ClaudeCompanionPet
         {
             string q = J.Str(s, "state_quality"), prov = J.Str(s, "provider");
             if (q == "stale_event") return Lang.T("久没动静 · 状态未知", "no events for a while · status unknown");
-            if (q == "activity_unavailable") return Lang.T("已打开 · Codex 不报告活动", "open · Codex reports no activity");
+            if (q == "activity_unavailable") return Lang.T("已打开 · " + ProviderName(prov) + " 不报告活动", "open · " + ProviderName(prov) + " reports no activity");
+            if (q == "file_activity_only") return Lang.T("读到最后写入时间 · 忙不忙读不到", "last write time only · busy or not is not reported");
             if (q == "liveness_unknown") return Lang.T("状态未知 · 存活未确认", "status unknown · not confirmed running");
             switch (state)
             {
@@ -225,10 +244,21 @@ namespace ClaudeCompanionPet
                 case "stopped": return Lang.T("已停止", "stopped");
                 case "reset_unconfirmed": return Lang.T("重置后未更新", "not updated since reset");
                 case "unavailable": return Lang.T("没有额度数据源", "no quota source");
+                case "no_key": return Lang.T("未配置 DeepSeek 密钥", "no DeepSeek key");
                 case "not_started": return Lang.T("未启动", "not started");
                 case "querying": return Lang.T("读取中…", "reading…");
             }
             return s;
+        }
+        // prepaid balance line: the number the API reported, an old number marked as old, or why there is none
+        static string BalanceText(Dictionary<string, object> primary, string status)
+        {
+            if (primary == null) return QStatus(status == "ok" ? "unavailable" : status);
+            string cur = J.Str(primary, "currency"); double t = J.Num(primary, "total", -1);
+            if (t < 0) return QStatus("unavailable");
+            string sym = cur == "CNY" ? "¥" : cur == "USD" ? "$" : cur == "" ? "" : cur + " ";
+            string s = sym + t.ToString("0.00", CultureInfo.InvariantCulture);
+            return status == "stale" ? s + " · " + QStatus("stale") : s;
         }
         static string WinLabel(string label)
         {
@@ -248,6 +278,13 @@ namespace ClaudeCompanionPet
                 Dictionary<string, object> a = D(ao); if (a == null) continue;
                 string prov = J.Str(a, "provider"), aStatus = J.Str(a, "status"); List<object> ws = L(a.ContainsKey("windows") ? a["windows"] : null);
                 string topEff = J.Str(a, "source") == "claude_statusline" ? "ok" : topStatus;   // the Codex quota module's overall state says nothing about the numbers Claude Code itself reported
+                // DeepSeek is prepaid: one balance line instead of percentage windows. No window is drawn for it.
+                Dictionary<string, object> bal = Sub(a, "balance");
+                if (bal != null || J.Str(a, "source") == "deepseek_balance_api")
+                {
+                    b.Quota.Add(new QRow { Provider = prov, Label = Lang.T("余额", "Balance"), Tag = BalanceText(Sub(bal, "primary"), aStatus), Muted = aStatus != "ok" });
+                    continue;
+                }
                 if (ws.Count == 0) { b.Quota.Add(new QRow { Provider = prov, Label = Lang.T("额度", "Quota"), Tag = QStatus(aStatus == "ok" ? (topStatus == "ok" ? "partial" : topStatus) : aStatus), Muted = true }); continue; }
                 foreach (object wo in ws)
                 {

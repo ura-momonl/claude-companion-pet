@@ -363,12 +363,12 @@ namespace ClaudeCompanionPet
         {
             using (SolidBrush ink = new SolidBrush(t.Ink)) using (SolidBrush mute = new SolidBrush(t.Ink3)) using (SolidBrush mute2 = new SolidBrush(t.Ink2))
             {
-                int whoW = Px(58), winW = Px(40), pctW = Px(46), gap = Px(8), resetW = compact ? 0 : Px(96), rowH = compact ? Px(22) : Px(26), bh = Px(5);
+                int whoW = Px(78), winW = Px(40), pctW = Px(46), gap = Px(8), resetW = compact ? 0 : Px(96), rowH = compact ? Px(22) : Px(26), bh = Px(5);
                 string prevProv = null;
                 foreach (QRow q in b.Quota)
                 {
                     int cy = y + rowH / 2;
-                    Color pc = q.Provider == "codex" ? t.Codex : q.Provider == "claude" ? t.Claude : t.Ink2;
+                    Color pc = q.Provider == "codex" ? t.Codex : q.Provider == "claude" ? t.Claude : q.Provider == "deepseek" ? t.Blue : t.Ink2;
                     string provider = q.Provider == "" ? "" : Display.ProviderLabel(q.Provider);
                     if (provider != "" && provider != prevProv)
                     {
@@ -457,7 +457,7 @@ namespace ClaudeCompanionPet
                     using (SolidBrush br = new SolidBrush(t.Ink)) g.DrawString(nm, fName, br, nameR, sfLeft);
                     if (idp != "") { using (SolidBrush br = new SolidBrush(t.Ink3)) g.DrawString(idp, fNote, br, new RectangleF(nameR.Right + Px(3), cy - Px(12), idW, Px(24)), sfLeft); nameR = new Rectangle(nameR.X, nameR.Y, nameR.Width + (int)idW, nameR.Height); }
                     // which assistant: a small dot in its colour after the name
-                    using (SolidBrush br = new SolidBrush(it.Agent == "Codex" ? t.Codex : t.Claude)) g.FillEllipse(br, nameR.Right + Px(6), cy - Px(3), Px(6), Px(6));
+                    using (SolidBrush br = new SolidBrush(it.Provider == "deepseek" ? t.Blue : it.Agent == "Codex" ? t.Codex : t.Claude)) g.FillEllipse(br, nameR.Right + Px(6), cy - Px(3), Px(6), Px(6));
                     float sx = nameR.Right + Px(18);
                     using (SolidBrush br = new SolidBrush(it.Ctx >= Ctx.TIRED_AT ? t.Warn : t.Ink2))
                         g.DrawString(det, fStat, br, new RectangleF(sx, cy - Px(12), Math.Max(10, rx - sx), Px(24)), sfRight);
@@ -794,7 +794,7 @@ namespace ClaudeCompanionPet
                 {
                 foreach (ModelRow m in u.Models)
                     {
-                        using (SolidBrush dot = new SolidBrush(m.Provider == "codex" ? t.Codex : t.Claude)) g.FillEllipse(dot, x0, y + Px(8), Px(7), Px(7));
+                        using (SolidBrush dot = new SolidBrush(m.Provider == "codex" ? t.Codex : m.Provider == "deepseek" ? t.Blue : t.Claude)) g.FillEllipse(dot, x0, y + Px(8), Px(7), Px(7));
                         g.DrawString(m.Label, fStat, ink, new RectangleF(x0 + Px(14), y, (x1 - x0) / 2, Px(23)), sfLeft);
                         g.DrawString(Display.Tok(m.Tokens), fStat, mute2, new RectangleF(x0 + (x1 - x0) / 2, y, (x1 - x0) / 2 - Px(62), Px(23)), sfRight);
                         g.DrawString(m.Cost, fBig, m.Priced ? ink : mute2, new RectangleF(x1 - Px(62), y, Px(62), Px(23)), sfRight);

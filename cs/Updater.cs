@@ -14,7 +14,7 @@ namespace ClaudeCompanionPet
 {
     static class Updater
     {
-        public const string Version = "2.20";
+        public const string Version = "2.21";
         public class Info { public string Tag = "", Url = "", Sha = "", Notes = ""; }
         static string Api() { return Env.Get("PET_UPDATE_API") ?? "https://api.github.com/repos/ura-momonl/claude-companion-pet/releases/latest"; }
         public static string Current() { return Env.Get("PET_VERSION") ?? Version; }

@@ -71,6 +71,25 @@ namespace ClaudeCompanionPet
         {
             if (s.LastState == "") s.LastState = s.State;
             s.State = s.LastState; s.StateQuality = "observed";
+            if (s.Provider == "deepseek" && (s.OwnershipEvidence == "bridge_process_alive" || s.OwnershipEvidence == "bridge_recent_event"))
+            {   // DSH's bridge reports real session events, so the state is observed, not inferred from a file time. The
+                // process that writes the bridge file is the liveness evidence; a recent event is weaker evidence when the
+                // pid cannot be checked (protected process). Nothing in the panel claims a jump for a dsh session.
+                bool held = now - s.SourceCheckedAt < 15000;
+                s.Life = held ? "alive" : "unknown"; s.LifeReason = held ? s.OwnershipEvidence : "bridge_evidence_stale";
+                if (!held) { s.State = "unknown"; s.StateQuality = "liveness_unknown"; }
+                else if ((s.State == "busy" || s.State == "waiting") && now - s.Updated > 900000) { s.State = "unknown"; s.StateQuality = "stale_event"; }
+                s.Visible = held || now - s.Updated < 21600000;
+                s.CanJump = false; s.WindowReason = "no_verified_process_mapping"; return;
+            }
+            if (s.Provider == "deepseek" && s.OwnershipEvidence == "file_activity_only")
+            {   // dsh gives us a last-write time and nothing else: no lock, no process, no approval event. Keep it visible while it is recent,
+                // but never dress the file activity up as a state.
+                s.Life = "unknown"; s.LifeReason = "file_activity_only";
+                s.State = "unknown"; s.StateQuality = "file_activity_only";
+                s.Visible = s.Updated > 0 && now - s.Updated < 21600000;
+                s.CanJump = false; s.WindowReason = "no_verified_process_mapping"; return;
+            }
             if (s.Provider == "codex" && s.OwnershipEvidence != "")
             {
                 bool held = s.OwnershipEvidence == "writer_lock_held" && now - s.SourceCheckedAt < 15000;
@@ -242,6 +261,9 @@ namespace ClaudeCompanionPet
                         if (s.Visible && s.Updated > 0 && now - s.Updated > HideAfterMin * 60000L && !((s.LastState == "waiting" || s.LastState == "error") && now - s.Updated < 30 * 60000L)) s.Visible = false;
                 Dictionary<string, object> usage = ReadSource(usageSource, sources, "usage"), accounts = ReadSource(accountSource, sources, "accounts");
                 accounts = WithClaudeLimits(accounts, now);
+                // DeepSeek has no subscription windows: its account line is the prepaid balance of the configured API key.
+                try { Dictionary<string, object> dsb = DeepSeekBalance.ReadSnapshot(); sources["deepseek_balance"] = J.Str(dsb, "status"); accounts = DeepSeekBalance.Merge(accounts, now); }
+                catch { sources["deepseek_balance"] = "unavailable"; }
                 QuotaLog.Record(accounts, now);
                 Dictionary<string, object> next = new Dictionary<string, object> { { "schema_version", 1 }, { "generated_at", now }, { "status", "ready" },
                     { "sessions", all.OrderByDescending(s => s.Visible).ThenByDescending(s => s.Updated).Select(s => SessionBackend.Serialize(s)).ToList() },

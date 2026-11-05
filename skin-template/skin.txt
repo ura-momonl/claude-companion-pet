@@ -1,0 +1,12 @@
+name=My skin
+name.zh=æˆ‘çš„çš®è‚¤
+# Screen pixels per picture pixel. Normal art (96-160 px): 1. Small pixel art (e.g. 32 px): 3 to 5.
+scale=1
+# Milliseconds per picture.
+frame_ms=250
+# loop = 1 2 3 1 2 3 | pingpong = 1 2 3 2 1 2 | once = stops on the last picture
+mode=pingpong
+# Per-state overrides, same keys with a state prefix, e.g.:
+# busy.frame_ms=120
+# done.mode=once
+# More (several animations per state, sleeping, dragging, clicking): see skins\README.md

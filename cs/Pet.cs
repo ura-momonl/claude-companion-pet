@@ -154,6 +154,7 @@ namespace ClaudeCompanionPet
             FormBorderStyle = FormBorderStyle.None; ShowInTaskbar = false; TopMost = true; StartPosition = FormStartPosition.Manual;
             Text = "claude-companion-pet"; Size = new Size(10, 10);
             LoadSettings();
+            if (DeepSeekBalance.Enabled) { try { DeepSeekBalance.Start(); } catch (Exception e) { Diag.Error("deepseek balance start", e); } }
             if (Env.Plugin) { SetupDone = true; hideIdle = true; } // the plugin has installed the hooks already; the pet hides while no session runs
             long so; if (long.TryParse(Env.Get("PET_SLEEP_MS") ?? "", out so) && so > 0) sleepAfterOverride = so;
             skins = Skin.Discover();
@@ -234,6 +235,7 @@ namespace ClaudeCompanionPet
                     else if (key == "glass") PanelForm.GlassOn = val != "0";
                     else if (key == "strip") PanelForm.SimpleStrip = val != "full";
                     else if (key == "claudeApi") ClaudeApi.Enabled = val == "1";
+                    else if (key == "dsBalance") DeepSeekBalance.Enabled = val == "1";
                     else if (key == "lang") Lang.Set(val);
                     else if (key == "hideAfterMin" && int.TryParse(val, out n) && n >= 0) Backend.HideAfterMin = n;
                     else if (key == "look") Theme.Mode = val == "light" || val == "dark" ? val : null;
@@ -246,7 +248,7 @@ namespace ClaudeCompanionPet
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(settingsFile));
-                File.WriteAllText(settingsFile, "ax=" + ax + "\r\nay=" + ay + "\r\nhideIdle=" + (hideIdle ? "1" : "0") + "\r\nsound=" + (sound ? "1" : "0") + "\r\nsize=" + SIZE_KEYS[sizeIdx] + "\r\nskin=" + skinId + "\r\nsetupDone=" + (SetupDone ? "1" : "0") + "\r\nlongTaskSec=" + longTaskSec + "\r\ndoneChime=" + (doneChime ? "1" : "0") + "\r\n" + "\r\nfloatOn=" + (floatOn ? "1" : "0") + (floatX != int.MinValue ? "\r\nfloatX=" + floatX + "\r\nfloatY=" + floatY : "") + (Theme.Mode != null ? "\r\nlook=" + Theme.Mode : "") + "\r\nglass=" + (PanelForm.GlassOn ? "1" : "0") + "\r\nclaudeApi=" + (ClaudeApi.Enabled ? "1" : "0") + "\r\nstrip=" + (PanelForm.SimpleStrip ? "simple" : "full") + "\r\nhideAfterMin=" + Backend.HideAfterMin + "\r\nlang=" + (Lang.Zh ? "zh" : "en"));
+                File.WriteAllText(settingsFile, "ax=" + ax + "\r\nay=" + ay + "\r\nhideIdle=" + (hideIdle ? "1" : "0") + "\r\nsound=" + (sound ? "1" : "0") + "\r\nsize=" + SIZE_KEYS[sizeIdx] + "\r\nskin=" + skinId + "\r\nsetupDone=" + (SetupDone ? "1" : "0") + "\r\nlongTaskSec=" + longTaskSec + "\r\ndoneChime=" + (doneChime ? "1" : "0") + "\r\n" + "\r\nfloatOn=" + (floatOn ? "1" : "0") + (floatX != int.MinValue ? "\r\nfloatX=" + floatX + "\r\nfloatY=" + floatY : "") + (Theme.Mode != null ? "\r\nlook=" + Theme.Mode : "") + "\r\nglass=" + (PanelForm.GlassOn ? "1" : "0") + "\r\nclaudeApi=" + (ClaudeApi.Enabled ? "1" : "0") + "\r\ndsBalance=" + (DeepSeekBalance.Enabled ? "1" : "0") + "\r\nstrip=" + (PanelForm.SimpleStrip ? "simple" : "full") + "\r\nhideAfterMin=" + Backend.HideAfterMin + "\r\nlang=" + (Lang.Zh ? "zh" : "en"));
             }
             catch (Exception e) { Log("settings not saved: " + e.Message); }
         }
@@ -797,6 +799,7 @@ namespace ClaudeCompanionPet
             Theme th = Theme.Current(); MenuStyle rd = new MenuStyle(th); Font mf = new Font("Segoe UI Semilight", 9f);
             menu.Renderer = rd; menu.Font = mf; menu.ShowImageMargin = false; menu.ShowCheckMargin = true;
             // 1. look and size
+            foreach (Skin found in Skin.Discover()) { Skin f2 = found; if (!skins.Exists(delegate (Skin x) { return x.Id == f2.Id; })) skins.Add(f2); } // skins added while the pet runs (Make-skin) show up without a restart
             ToolStripMenuItem sk = new ToolStripMenuItem(Lang.T("皮肤", "Skin"));
             foreach (Skin s in skins)
             {
@@ -901,6 +904,22 @@ namespace ClaudeCompanionPet
             ToolStripMenuItem capi = new ToolStripMenuItem(Lang.T("用登录账号查 Claude 额度", "Read Claude limits from the account")); capi.CheckOnClick = true; capi.Checked = ClaudeApi.Enabled;
             capi.Click += delegate { ClaudeApi.Enabled = capi.Checked; SaveSettings(); Log("claudeApi " + ClaudeApi.Enabled); };
             more.DropDownItems.Add(capi);
+            // Off by default: no key is read and no request is sent until the user turns this on.
+            ToolStripMenuItem dsb = new ToolStripMenuItem(Lang.T("读取 DeepSeek 余额", "Read DeepSeek balance")); dsb.CheckOnClick = true; dsb.Checked = DeepSeekBalance.Enabled;
+            dsb.Click += delegate
+            {
+                DeepSeekBalance.Enabled = dsb.Checked; SaveSettings(); Log("dsBalance " + dsb.Checked); lastKey = "";
+                if (dsb.Checked)
+                {
+                    try { DeepSeekBalance.Start(); } catch (Exception e) { Diag.Error("deepseek balance start", e); }
+                    if (!DeepSeekBalance.HasKey())
+                        MessageBox.Show(Lang.T("把 DeepSeek API 密钥写进这个文件（只在本机读取，不会上传）：\r\n" + DeepSeekBalance.KeyPath() + "\r\n\r\n或设置环境变量 DEEPSEEK_API_KEY。放好后重开菜单即可。",
+                                              "Put the DeepSeek API key into this file (read locally only):\r\n" + DeepSeekBalance.KeyPath() + "\r\n\r\nOr set DEEPSEEK_API_KEY. Reopen the menu once it is there."),
+                                        "claude-companion", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else DeepSeekBalance.Stop();
+            };
+            more.DropDownItems.Add(dsb);
             if (!Env.Plugin && linked)
             {
                 more.DropDownItems.Add(new ToolStripSeparator());
